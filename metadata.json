@@ -1,0 +1,5 @@
+{
+  "name": "LoRA Dataset Curator & Tagger",
+  "description": "An AI-powered tool to help users build high-quality, well-captioned datasets for training Stable Diffusion LoRA models. Upload images, define a concept, and let Gemini score, curate, and caption your dataset.",
+  "requestFramePermissions": []
+}
