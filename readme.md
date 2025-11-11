@@ -1,4 +1,4 @@
-# The LoRA Dataset Creator
+# The LoRA Image Dataset Curator
 
 This application enables users to define a concept, such as a bowling ball, and submit a set of images associated with it. The application will utilize an API to assess the image's suitability as a training image for a Stable Diffusion LoRA (Low-Rank Adaptation) model. The application achieves this by grading the image against a scale of 0 to 1. The user can select the score necessary to accept the image for training; otherwise, the image is rejected. For all accepted images, the API generates a caption or a set of tags for the image based on the user’s preferences. Finally, the accepted images and their associated labels (in a .txt file) are downloadable in a ZIP archive.
 
