@@ -306,25 +306,28 @@ const ImageCard: React.FC<ImageCardProps> = ({ result }) => {
                     label: "Error"
                 };
             default:
+                // Should not happen, but provides a fallback
                 return { Icon: null, color: "", bgColor: "", label: "" };
         }
     };
     const { Icon, color, bgColor, borderColor, label } = getStatusInfo();
 
     return (
-        <div className={`group relative overflow-hidden rounded-lg shadow-lg transition-all duration-300 ${isRejected ? 'opacity-40' : ''} ${bgColor} border ${borderColor}`}>
-            <img src={result.dataUrl} alt={result.file.name} className="w-full h-48 object-cover" />
-            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/70 transition-all duration-300 p-4 flex flex-col justify-end">
-                <div className="text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out">
-                    <div className="flex items-center justify-between">
-                         {Icon && <Icon className={`h-6 w-6 ${color}`} />}
-                        <span className="font-mono text-lg">{result.score?.toFixed(2)}</span>
+        <div className={`flex items-start space-x-4 p-3 rounded-lg shadow-lg transition-all duration-300 ${isRejected ? 'opacity-50' : ''} ${bgColor} border ${borderColor}`}>
+            <img src={result.dataUrl} alt={result.file.name} className="w-28 h-28 object-cover rounded-md flex-shrink-0 border border-black/20" />
+            <div className="flex-grow min-w-0">
+                <div className="flex justify-between items-start">
+                    <div className={`flex items-center text-sm font-bold ${color}`}>
+                        {Icon && <Icon className="h-5 w-5 mr-1.5 flex-shrink-0" />}
+                        <span>{label}</span>
                     </div>
-                    <p className="text-xs font-semibold mt-2 uppercase tracking-wider">{label}</p>
-                    <p className="text-xs text-gray-300 mt-1 line-clamp-3">
-                        {result.status === ImageStatus.Accepted ? result.annotation : result.reason}
-                    </p>
+                    {result.score !== undefined && (
+                        <span className="font-mono text-sm bg-gray-900/50 px-2 py-0.5 rounded">{result.score.toFixed(2)}</span>
+                    )}
                 </div>
+                <p className="text-xs text-gray-300 mt-2 break-words">
+                    {result.status === ImageStatus.Accepted ? result.annotation : result.reason}
+                </p>
             </div>
         </div>
     );
@@ -382,7 +385,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, onDownload, is
                 </div>
             </div>
             <div className="flex-grow overflow-y-auto pr-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                     {results.map(result => <ImageCard key={result.id} result={result} />)}
                 </div>
             </div>
