@@ -325,7 +325,10 @@ const ImageCard: React.FC<ImageCardProps> = ({ result }) => {
                         <span className="font-mono text-sm bg-gray-900/50 px-2 py-0.5 rounded">{result.score.toFixed(2)}</span>
                     )}
                 </div>
-                <p className="text-xs text-gray-300 mt-2 break-words">
+                <p className="text-xs text-gray-400 mt-2 truncate font-semibold" title={result.file.name}>
+                    {result.file.name}
+                </p>
+                <p className="text-xs text-gray-300 mt-1 break-words">
                     {result.status === ImageStatus.Accepted ? result.annotation : result.reason}
                 </p>
             </div>

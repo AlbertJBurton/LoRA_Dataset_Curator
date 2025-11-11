@@ -138,7 +138,7 @@ export const getAnnotation = async (apiKey: string, imageFile: File, concept: st
         const dataUrl = await fileToDataUrl(imageFile);
         const prompt = annotationType === AnnotationType.Caption 
             ? `Describe this image in a single sentence. IMPORTANT: You must NOT use the words or describe the concept of '${concept}'. Focus only on the background, composition, lighting, and other secondary objects.`
-            : `List descriptive tags for this image. IMPORTANT: You must NOT include tags related to '${concept}'. Focus only on background, composition, lighting, and other secondary objects. Separate tags with a comma.`;
+            : `List descriptive, comma-separated tags for this image. IMPORTANT: Do NOT repeat tags. You must NOT include tags related to '${concept}'. Focus only on background, composition, lighting, and other secondary objects.`;
 
         const payload = {
             model: "local-model",
@@ -161,7 +161,14 @@ export const getAnnotation = async (apiKey: string, imageFile: File, concept: st
             throw new Error(`LM Studio request failed with status ${response.status}: ${errorBody}`);
         }
         const result = await response.json();
-        return result.choices[0].message.content;
+        let annotation = result.choices[0].message.content;
+
+        if (annotationType === AnnotationType.Tags) {
+            const tags = annotation.split(',').map(tag => tag.trim()).filter(tag => tag);
+            const uniqueTags = [...new Set(tags)];
+            annotation = uniqueTags.join(', ');
+        }
+        return annotation;
     } else {
         if (!apiKey) throw new Error("A valid API key is required to perform analysis.");
         const ai = new GoogleGenAI({ apiKey });
