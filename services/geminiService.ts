@@ -25,23 +25,30 @@ export const validateApiKey = async (apiKey: string): Promise<boolean> => {
     }
 };
 
-export const validateLmStudioServer = async (url: string): Promise<boolean> => {
-    if (!url) return false;
+export const validateLmStudioServer = async (url: string): Promise<{ isValid: boolean; models: string[] }> => {
+    if (!url) return { isValid: false, models: [] };
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
 
     try {
-        // Use a simple endpoint like /v1/models which is standard for OpenAI-compatible servers
         const response = await fetch(`${url}/v1/models`, {
             method: 'GET',
             signal: controller.signal,
         });
         clearTimeout(timeoutId);
-        return response.ok;
+
+        if (!response.ok) {
+            return { isValid: false, models: [] };
+        }
+        
+        const data = await response.json();
+        const modelIds = data?.data?.map((model: any) => model.id) || [];
+
+        return { isValid: true, models: modelIds };
     } catch (error) {
         clearTimeout(timeoutId);
         console.error("LM Studio server validation failed:", error);
-        return false;
+        return { isValid: false, models: [] };
     }
 };
 
@@ -82,7 +89,6 @@ export const getScoreAndReason = async (apiKey: string, imageFile: File, concept
                     ]
                 }
             ],
-            response_format: { type: "json_object" },
             max_tokens: 512,
         };
 

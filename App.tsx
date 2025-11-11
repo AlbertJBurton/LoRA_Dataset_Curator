@@ -43,7 +43,7 @@ const Spinner: React.FC = () => (
     </svg>
 );
 
-const ApiStatusIndicator: React.FC<{ isLoading: boolean; isValid: boolean | null; source: 'env' | 'user' | null; model: GeminiModel }> = ({ isLoading, isValid, source, model }) => {
+const ApiStatusIndicator: React.FC<{ isLoading: boolean; isValid: boolean | null; source: 'env' | 'user' | null; model: GeminiModel; lmStudioModels: string[] }> = ({ isLoading, isValid, source, model, lmStudioModels }) => {
     const isLmStudio = model === GeminiModel.LMStudio;
     
     if (isLoading) {
@@ -51,7 +51,13 @@ const ApiStatusIndicator: React.FC<{ isLoading: boolean; isValid: boolean | null
         return <div className="flex items-center text-sm text-yellow-400 mt-2"><Spinner /> <span className="ml-2">{message}</span></div>;
     }
     if (isValid) {
-        const message = isLmStudio ? "LM Studio Connection Successful" : "API Connection Successful";
+        if (isLmStudio) {
+            const firstModel = lmStudioModels.length > 0 ? lmStudioModels[0] : null;
+            const modelsText = firstModel ? `Loaded Model: ${firstModel}` : 'No models loaded.';
+            const message = `LM Studio Connection Successful. ${modelsText}`;
+            return <div className="flex items-start text-sm text-green-400 mt-2"><CheckCircleIcon className="h-5 w-5 mr-2 flex-shrink-0" /> <span>{message}</span></div>;
+        }
+        const message = "API Connection Successful";
         return <div className="flex items-center text-sm text-green-400 mt-2"><CheckCircleIcon className="h-5 w-5 mr-2" /> {message}</div>;
     }
     if (isValid === false) {
@@ -59,7 +65,7 @@ const ApiStatusIndicator: React.FC<{ isLoading: boolean; isValid: boolean | null
             return <div className="flex items-center text-sm text-red-400 mt-2"><XCircleIcon className="h-5 w-5 mr-2" /> LM Studio connection failed. Please check URL and ensure server is running.</div>;
         }
         if (source === 'env') {
-            return <div className="flex items-center text-sm text-red-400 mt-2"><XCircleIcon className="h-5 w-5 mr-2" /> Invalid API key in environment.</div>;
+            return <div className="flex items-center text-sm text-red-400 mt-2"><XCircleIcon className="h-5 w-5 mr-2" /> Invalid API key in environment. Please enter a valid key below.</div>;
         }
         if (source === 'user') {
              return <div className="flex items-center text-sm text-red-400 mt-2"><XCircleIcon className="h-5 w-5 mr-2" /> Invalid API Key. Please check and re-enter.</div>;
@@ -98,6 +104,7 @@ interface SettingsPanelProps {
     apiKeySource: 'env' | 'user' | null;
     isApiValid: boolean | null;
     isApiLoading: boolean;
+    lmStudioModels: string[];
 }
 
 const AVAILABLE_MODELS = [
@@ -106,13 +113,13 @@ const AVAILABLE_MODELS = [
     { id: GeminiModel.LMStudio, name: 'LM Studio' },
 ];
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ apiKey, setApiKey, concept, setConcept, annotationType, setAnnotationType, geminiModel, setGeminiModel, lmStudioUrl, setLmStudioUrl, threshold, setThreshold, onAnalyze, isLoading, canAnalyze, apiKeySource, isApiValid, isApiLoading }) => (
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ apiKey, setApiKey, concept, setConcept, annotationType, setAnnotationType, geminiModel, setGeminiModel, lmStudioUrl, setLmStudioUrl, threshold, setThreshold, onAnalyze, isLoading, canAnalyze, apiKeySource, isApiValid, isApiLoading, lmStudioModels }) => (
     <div className="flex flex-col h-full">
         <div className="flex-grow space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-white">LoRA Dataset Curator</h1>
                 <p className="text-sm text-gray-400 mt-1">Curate and tag your LoRA training images with AI.</p>
-                <ApiStatusIndicator isLoading={isApiLoading} isValid={isApiValid} source={apiKeySource} model={geminiModel} />
+                <ApiStatusIndicator isLoading={isApiLoading} isValid={isApiValid} source={apiKeySource} model={geminiModel} lmStudioModels={lmStudioModels} />
             </div>
             <div className="space-y-6">
                  {apiKeySource === 'user' && geminiModel !== GeminiModel.LMStudio && (
@@ -329,8 +336,9 @@ interface ResultsDisplayProps {
     isLoading: boolean;
     onStop: () => void;
     progressMessage: string;
+    onClearImages: () => void;
 }
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, onDownload, isLoading, onStop, progressMessage }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, onDownload, isLoading, onStop, progressMessage, onClearImages }) => {
     const acceptedCount = useMemo(() => results.filter(r => r.status === ImageStatus.Accepted).length, [results]);
 
     if (isLoading) {
@@ -357,14 +365,21 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, onDownload, is
         <div className="flex flex-col h-full">
             <div className="flex-shrink-0 flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Analysis Results</h2>
-                <button
-                    onClick={onDownload}
-                    disabled={acceptedCount === 0}
-                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
-                >
-                    <DownloadIcon className="h-5 w-5" />
-                    <span>Download Accepted ({acceptedCount})</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={onClearImages}
+                        className="text-sm bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold px-3 py-1 rounded-md transition">
+                        Clear Images
+                    </button>
+                    <button
+                        onClick={onDownload}
+                        disabled={acceptedCount === 0}
+                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+                    >
+                        <DownloadIcon className="h-5 w-5" />
+                        <span>Download Accepted ({acceptedCount})</span>
+                    </button>
+                </div>
             </div>
             <div className="flex-grow overflow-y-auto pr-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -392,6 +407,7 @@ function App() {
     const [apiKeySource, setApiKeySource] = useState<'env' | 'user' | null>(null);
     const [isApiValid, setIsApiValid] = useState<boolean | null>(null);
     const [isApiLoading, setIsApiLoading] = useState<boolean>(true);
+    const [lmStudioModels, setLmStudioModels] = useState<string[]>([]);
 
     useEffect(() => {
         // This effect runs once on mount to check for environment-provided keys for Gemini
@@ -415,15 +431,21 @@ function App() {
         const validateConnection = async () => {
             setIsApiLoading(true);
             setIsApiValid(null);
+            setLmStudioModels([]);
 
             if (geminiModel === GeminiModel.LMStudio) {
-                const isValid = await validateLmStudioServer(lmStudioUrl);
+                const { isValid, models } = await validateLmStudioServer(lmStudioUrl);
                 setIsApiValid(isValid);
+                setLmStudioModels(models);
             } else {
                 // Handle Gemini validation
                 if (apiKeySource === 'env' && apiKey) {
                     const isValid = await validateApiKey(apiKey);
                     setIsApiValid(isValid);
+                    if (!isValid) {
+                        setApiKeySource('user'); // Fallback to user input if env key is bad
+                        setApiKey(''); // Clear the bad key
+                    }
                 } else if (apiKeySource === 'user' && apiKey.trim()) {
                     const isValid = await validateApiKey(apiKey);
                     setIsApiValid(isValid);
@@ -557,6 +579,7 @@ function App() {
                     apiKeySource={apiKeySource}
                     isApiValid={isApiValid}
                     isApiLoading={isApiLoading}
+                    lmStudioModels={lmStudioModels}
                 />
             </aside>
             <main className="flex-1 flex flex-col p-6 overflow-hidden">
@@ -567,7 +590,7 @@ function App() {
                     <div className="flex-grow overflow-y-auto pr-2">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-semibold">Image Preview ({images.length})</h2>
-                            <button onClick={handleClearImages} className="text-sm bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold px-3 py-1 rounded-md transition">Clear All</button>
+                            <button onClick={handleClearImages} className="text-sm bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold px-3 py-1 rounded-md transition">Clear Images</button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7 gap-4">
                             {images.map(image => (
@@ -585,6 +608,7 @@ function App() {
                             isLoading={isLoading}
                             onStop={handleStop}
                             progressMessage={progressMessage}
+                            onClearImages={handleClearImages}
                          />
                     </div>
                 )}
